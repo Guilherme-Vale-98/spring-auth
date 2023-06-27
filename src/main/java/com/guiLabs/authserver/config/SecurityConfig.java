@@ -1,4 +1,4 @@
-package config;
+package com.guiLabs.authserver.config;
 
 
 
@@ -27,6 +27,7 @@ import org.springframework.security.oauth2.server.authorization.client.Registere
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
+import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
 import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
@@ -65,7 +66,7 @@ public class SecurityConfig {
 
 		return http.build();
 	}
-	
+
 	@Bean 
 	@Order(2)
 	public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http)
@@ -80,7 +81,7 @@ public class SecurityConfig {
 
 		return http.build();
 	}
-	
+
 	@Bean 
 	public UserDetailsService userDetailsService() {
 		UserDetails userDetails = User.withDefaultPasswordEncoder()
@@ -91,8 +92,6 @@ public class SecurityConfig {
 
 		return new InMemoryUserDetailsManager(userDetails);
 	}
-	
-	
 
 	@Bean 
 	public RegisteredClientRepository registeredClientRepository() {
@@ -102,16 +101,19 @@ public class SecurityConfig {
 				.clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
 				.authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
 				.authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+				.authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
 				.redirectUri("http://127.0.0.1:8080/login/oauth2/code/oidc-client")
-				.postLogoutRedirectUri("http://127.0.0.1:8080/")
+				.postLogoutRedirectUri("http://127.0.0.1:8080/authorized")
 				.scope(OidcScopes.OPENID)
 				.scope(OidcScopes.PROFILE)
+				.scope("message.write")
+				.scope("message.read")
 				.clientSettings(ClientSettings.builder().requireAuthorizationConsent(true).build())
 				.build();
 
 		return new InMemoryRegisteredClientRepository(oidcClient);
 	}
-	
+
 	@Bean 
 	public JWKSource<SecurityContext> jwkSource() {
 		KeyPair keyPair = generateRsaKey();
@@ -137,10 +139,16 @@ public class SecurityConfig {
 		}
 		return keyPair;
 	}
-	
+
 	@Bean 
 	public JwtDecoder jwtDecoder(JWKSource<SecurityContext> jwkSource) {
 		return OAuth2AuthorizationServerConfiguration.jwtDecoder(jwkSource);
 	}
-	
+
+	@Bean 
+	public AuthorizationServerSettings authorizationServerSettings() {
+		return AuthorizationServerSettings.builder().build();
+	}
+
 }
+
